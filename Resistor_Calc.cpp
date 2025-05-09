@@ -753,7 +753,7 @@ int six_band(std::string input) {
 		c = 1;
 		break;
 	default:
-		std::cout << "ERROR: Band four input not supported" << std::endl;
+		std::cout << "ERROR: Band six input not supported" << std::endl;
 		check = false;
 	}
 
