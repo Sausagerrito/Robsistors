@@ -1,0 +1,56 @@
+
+
+
+
+
+
+main{
+	prompt
+
+	get user input
+
+	parse chars and store them in a vector
+
+	change logic depending on how many characters were entered
+		switch case on vectorlength
+
+	convert chars into numbers
+		maps
+
+	break down number into prefix-suffix
+		if then chain
+}
+
+switch vector length:
+	case 3:
+		apply map1;
+		prefix = char1*10 + char2;
+		suffix = char3;
+		
+
+	case 4:
+		apply map1;
+		prefix = char1*10 + char2; 
+		suffix = char3;
+		tolerance = char4;
+
+	case 5:
+		apply map2;
+		prefix = char1*100 + char2*10 + char3;
+		suffix = char4;
+		tolerance = char5
+
+	case 6:
+		apply map2;
+		prefix = char1*100 + char2*10 + char3;
+		suffix = char4;
+		tolerance = char5;
+		temp_coef = char6;
+
+
+struct 3Band{
+	prefix: f32,
+	suffix: char,
+	tolerance: f32,
+	temp:  u8
+}

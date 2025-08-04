@@ -4,3 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+
+[build-dependencies]
+embed-resource = "3.0.4"
+
+[profile.release]
+opt-level = "s"          # Optimize for size ('z' is smaller than 's')
+lto = "fat"              # Enables Link Time Optimization across crates
+codegen-units = 1        # Fewer codegen units = better optimization (slower compile)
+panic = "abort"          # Removes stack unwinding code for panics
+strip = "symbols"        # Strips debug symbols (requires Rust 1.59+)
+incremental = false      # Disable incremental compilation for smaller build artifacts
+debug = false            # Do not include debug info in release
