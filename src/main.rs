@@ -1,37 +1,38 @@
 use std::fmt;
+use std::io;
 
+//FIXME panicks and crashes when inputs are bad instead of returning
 fn main() {
     println!(
         "blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite gol[D] [S]ilver"
     );
-    let mut v: Vec<char> = vec![];
-    v.push('R'.to_ascii_lowercase());
-    v.push('R'.to_ascii_lowercase());
-    v.push('R'.to_ascii_lowercase());
-    v.push('R'.to_ascii_lowercase());
 
-    let d: Bands = banding(v).expect("idk yet"); //data
+    loop {
+        println!("Input color code: ");
 
-    let cd: (f32, char, f32, char) = convert(d.hundreds, d.tens, d.ones, d.mult, d.tolerance); //converted data
+        let mut input = String::new();
 
-    let r = Resistor {
-        prefix: cd.0,
-        suffix: cd.1,
-        tolerance_prefix: cd.2,
-        tolerance_suffix: cd.3,
-        temp: d.temp_coef,
-    };
+        io::stdin()
+            .read_line(&mut input)
+            .expect("failed to read line");
 
-    println!("{}", r);
+        let v: Vec<char> = input.trim().to_ascii_lowercase().chars().collect();
+
+        let d: Bands = banding(v).expect("bad input"); //data
+
+        let r = Resistor::new(d);
+
+        println!("{}", r);
+    }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct Resistor {
     prefix: f32,
     suffix: char,
     tolerance_prefix: f32,
     tolerance_suffix: char,
-    temp: u8,
+    temp: Option<u8>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -41,63 +42,91 @@ struct Bands {
     ones: u8,
     mult: f32,
     tolerance: f32,
-    temp_coef: u8,
+    temp: Option<u8>,
 }
 
+impl Resistor {
+    fn new(b: Bands) -> Self {
+        let (prefix, suffix, tolerance_prefix, tolerance_suffix) =
+            notorize(b.hundreds, b.tens, b.ones, b.mult, b.tolerance);
+        Resistor {
+            prefix,
+            suffix,
+            tolerance_prefix,
+            tolerance_suffix,
+            temp: b.temp,
+        }
+    }
+}
+
+//TODO handling the white space could be more elegant
+//but I think making them strings would consume more memory just to have ""
 impl fmt::Display for Resistor {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{} {}Ω ± {} {}Ω, {}ppm/C",
-            self.prefix, self.suffix, self.tolerance_prefix, self.tolerance_suffix, self.temp
-        )
+        if self.suffix != ' ' {
+            write!(f, "{}{}Ω", self.prefix, self.suffix)?;
+        } else {
+            write!(f, "{}Ω", self.prefix)?;
+        }
+
+        if self.tolerance_prefix != 0.0 || self.tolerance_suffix != ' ' {
+            if self.tolerance_suffix != ' ' {
+                write!(f, " ± {}{}Ω", self.tolerance_prefix, self.tolerance_suffix)?;
+            } else {
+                write!(f, " ± {}Ω", self.tolerance_prefix)?;
+            }
+        }
+
+        if let Some(ppm) = self.temp {
+            write!(f, ", {}ppm/C", ppm)?;
+        }
+
+        Ok(())
     }
 }
 
+//TODO should I replace the 0's with None and make them options?
+//like i did with temp?
 fn banding(v: Vec<char>) -> Result<Bands, Box<dyn std::error::Error>> {
-    let size: usize = v.len();
-
-    let mut raw = Bands {
-        hundreds: 0,
-        tens: 0,
-        ones: 0,
-        mult: 0.,
-        tolerance: 0.,
-        temp_coef: 0,
-    };
-
-    match size {
-        3 => {
-            raw.tens = prefix_map(v[0]).ok_or("character 1 invalid")?;
-            raw.ones = prefix_map(v[1]).ok_or("character 2 invalid")?;
-            raw.mult = suffix_map(v[2]).ok_or("character 3 invalid")?;
-        }
-        4 => {
-            raw.tens = prefix_map(v[0]).ok_or("character 1 invalid")?;
-            raw.ones = prefix_map(v[1]).ok_or("character 2 invalid")?;
-            raw.mult = suffix_map(v[2]).ok_or("character 3 invalid")?;
-            raw.tolerance = tolerance_map(v[3]).ok_or("character 4 invalid")?;
-        }
-        5 => {
-            raw.hundreds = prefix_map(v[0]).ok_or("character 1 invalid")?;
-            raw.tens = prefix_map(v[1]).ok_or("character 2 invalid")?;
-            raw.ones = prefix_map(v[2]).ok_or("character 3 invalid")?;
-            raw.mult = suffix_map(v[3]).ok_or("character 4 invalid")?;
-            raw.tolerance = tolerance_map(v[4]).ok_or("character 5 invalid")?;
-        }
-        6 => {
-            raw.hundreds = prefix_map(v[0]).ok_or("character 1 invalid")?;
-            raw.tens = prefix_map(v[1]).ok_or("character 2 invalid")?;
-            raw.ones = prefix_map(v[2]).ok_or("character 3 invalid")?;
-            raw.mult = suffix_map(v[3]).ok_or("character 4 invalid")?;
-            raw.tolerance = tolerance_map(v[4]).ok_or("character 5 invalid")?;
-            raw.temp_coef = temp_map(v[5]).ok_or("character 6 invalid")?;
-        }
-        _ => return Err("unsupported length".into()),
+    match v.len() {
+        3 => Ok(Bands {
+            hundreds: 0,
+            tens: prefix_map(v[0]).ok_or("char1")?,
+            ones: prefix_map(v[1]).ok_or("char2")?,
+            mult: suffix_map(v[2]).ok_or("char3")?,
+            tolerance: 0.,
+            temp: None,
+        }),
+        4 => Ok(Bands {
+            hundreds: 0,
+            tens: prefix_map(v[0]).ok_or("char1")?,
+            ones: prefix_map(v[1]).ok_or("char2")?,
+            mult: suffix_map(v[2]).ok_or("char3")?,
+            tolerance: tolerance_map(v[3]).ok_or("char4")?,
+            temp: None,
+        }),
+        5 => Ok(Bands {
+            hundreds: prefix_map(v[0]).ok_or("char1")?,
+            tens: prefix_map(v[1]).ok_or("char2")?,
+            ones: prefix_map(v[2]).ok_or("char3")?,
+            mult: suffix_map(v[3]).ok_or("char4")?,
+            tolerance: tolerance_map(v[4]).ok_or("char5")?,
+            temp: None,
+        }),
+        6 => Ok(Bands {
+            hundreds: prefix_map(v[0]).ok_or("char1")?,
+            tens: prefix_map(v[1]).ok_or("char2")?,
+            ones: prefix_map(v[2]).ok_or("char3")?,
+            mult: suffix_map(v[3]).ok_or("char4")?,
+            tolerance: tolerance_map(v[4]).ok_or("char5")?,
+            temp: temp_map(v[5]),
+        }),
+        _ => Err("unsupported length".into()),
     }
-    Ok(raw)
 }
 
+//FIXME these match functions happen at run time
+//i want to explore compile time options
 fn prefix_map(c: char) -> Option<u8> {
     match c {
         'k' => Some(0),
@@ -160,40 +189,21 @@ fn temp_map(c: char) -> Option<u8> {
     }
 }
 
-fn convert(hundreds: u8, tens: u8, ones: u8, mult: f32, tolerance: f32) -> (f32, char, f32, char) {
-    let mut suffix: char = ' ';
-    let mut prefix: f32 = 0.;
-    let mut tol_prefix: f32 = 0.;
-    let mut tol_suffix: char = ' ';
-
+fn notorize(hundreds: u8, tens: u8, ones: u8, mult: f32, tolerance: f32) -> (f32, char, f32, char) {
     let whole = (hundreds as f32 * 100. + tens as f32 * 10. + ones as f32) * mult;
-    if whole < 1000. {
-        prefix = whole;
-    } else if whole < 1000000. {
-        prefix = whole / 1000.;
-        suffix = 'K';
-    } else if whole < 1000000000. {
-        prefix = whole / 1000000.;
-        suffix = 'M';
-    } else if whole < 1000000000000. {
-        prefix = whole / 1000000000.;
-        suffix = 'G';
-    }
-
     let applied_tol: f32 = tolerance / 100. * whole;
 
-    if applied_tol < 1000. {
-        tol_prefix = applied_tol;
-    } else if applied_tol < 1000000. {
-        tol_prefix = applied_tol / 1000.;
-        tol_suffix = 'K';
-    } else if applied_tol < 1000000000. {
-        tol_prefix = applied_tol / 1000000.;
-        tol_suffix = 'M';
-    } else if applied_tol < 1000000000000. {
-        tol_prefix = applied_tol / 1000000000.;
-        tol_suffix = 'G';
-    }
-
+    let (prefix, suffix) = fix_helper(whole);
+    let (tol_prefix, tol_suffix) = fix_helper(applied_tol);
     (prefix, suffix, tol_prefix, tol_suffix)
+}
+
+fn fix_helper(number: f32) -> (f32, char) {
+    match number {
+        n if n < 1_000.0 => (n, ' '),
+        n if n < 1_000_000.0 => (n / 1_000.0, 'K'),
+        n if n < 1_000_000_000.0 => (n / 1_000_000.0, 'M'),
+        n if n < 1_000_000_000_000.0 => (n / 1_000_000_000.0, 'G'),
+        _ => (number, '?'),
+    }
 }
