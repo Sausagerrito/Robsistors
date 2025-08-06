@@ -1,13 +1,28 @@
+/// Resistor color code calculator
+/// 
+/// This program converts resistor color codes to their corresponding resistance values.
+/// Supports 3, 4, 5, and 6-band resistors.
+
 use std::fmt;
-use std::io;
+use std::io::{self, Write};
+
+// Constants for engineering notation thresholds
+const NANO_THRESHOLD: f32 = 0.000_001;
+const MICRO_THRESHOLD: f32 = 0.001;
+const MILLI_THRESHOLD: f32 = 1.0;
+const KILO_THRESHOLD: f32 = 1_000.0;
+const MEGA_THRESHOLD: f32 = 1_000_000.0;
+const GIGA_THRESHOLD: f32 = 1_000_000_000.0;
 
 fn main() {
     println!(
         "blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite gol[D] [S]ilver"
     );
+    println!("Enter color codes separated by spaces. Type 'quit' or 'exit' to exit.");
 
     loop {
-        println!("\nInput color code: ");
+        print!("Input color code: ");
+        io::stdout().flush().expect("Failed to flush stdout");
 
         let mut input = String::new();
 
@@ -15,7 +30,15 @@ fn main() {
             .read_line(&mut input)
             .expect("failed to read line");
 
-        for code in input.trim().split_whitespace() {
+        let trimmed = input.trim();
+        
+        // Check for exit commands
+        if trimmed.eq_ignore_ascii_case("quit") || trimmed.eq_ignore_ascii_case("exit") {
+            println!("Goodbye!");
+            break;
+        }
+
+        for code in trimmed.split_whitespace() {
             let v: Vec<char> = code.to_ascii_lowercase().chars().collect();
 
             match chars_to_bands(v) {
@@ -24,7 +47,7 @@ fn main() {
                     println!("{}", r);
                 }
                 Err(e) => {
-                    println!("ERROR: bad input: {}", e);
+                    println!("ERROR: bad input '{}': {}", code, e);
                     continue;
                 }
             }
@@ -32,6 +55,7 @@ fn main() {
     }
 }
 
+/// Represents a resistor with its value, tolerance, and temperature coefficient
 #[derive(Debug)]
 struct Resistor {
     value: f32,
@@ -39,6 +63,7 @@ struct Resistor {
     temp: u8,
 }
 
+/// Represents the color bands of a resistor
 #[derive(Debug)]
 struct Bands {
     hundreds: u8,
@@ -49,7 +74,8 @@ struct Bands {
     temp: u8,
 }
 
-#[derive(Clone,Debug)]
+/// Errors that can occur when parsing resistor color codes
+#[derive(Clone, Debug)]
 enum BandError {
     BadDigit(usize),
     BadMultiplier,
@@ -73,11 +99,12 @@ impl std::fmt::Display for BandError {
 impl std::error::Error for BandError {}
 
 impl Resistor {
+    /// Creates a new Resistor from Bands
     fn new(b: &Bands) -> Self {
         let (value, tolerance) = bands_to_ohms(b);
         Resistor {
-            value: value,
-            tolerance: tolerance,
+            value,
+            tolerance,
             temp: b.temp,
         }
     }
@@ -85,18 +112,19 @@ impl Resistor {
 
 impl fmt::Display for Resistor {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt_helper(f, egr_fmt(self.value), "")?;
-        if self.tolerance != 0.{
-            let (tol_val, tol_char) = egr_fmt(self.tolerance);
+        fmt_helper(f, eng_fmt(self.value), "")?;
+        if self.tolerance != 0.0 {
+            let (tol_val, tol_char) = eng_fmt(self.tolerance);
             fmt_helper(f, (tol_val, tol_char), " ± ")?;
         }
-        if self.temp != 0{
+        if self.temp != 0 {
             write!(f, ", {}°C", self.temp)?;
         }
-    Ok(())
+        Ok(())
     }
 }
 
+/// Helper function for formatting resistor values
 fn fmt_helper(f: &mut fmt::Formatter, val: (f32, char), prefix: &str) -> fmt::Result {
     if val.1 != ' ' {
         write!(f, "{}{}{}Ω", prefix, val.0, val.1)
@@ -105,6 +133,13 @@ fn fmt_helper(f: &mut fmt::Formatter, val: (f32, char), prefix: &str) -> fmt::Re
     }
 }
 
+/// Converts a vector of characters to Bands structure
+/// 
+/// Supports 3, 4, 5, and 6-band resistors:
+/// - 3-band: digit, digit, multiplier
+/// - 4-band: digit, digit, multiplier, tolerance
+/// - 5-band: digit, digit, digit, multiplier, tolerance
+/// - 6-band: digit, digit, digit, multiplier, tolerance, temperature
 fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
     match v.len() {
         3 => Ok(Bands {
@@ -112,8 +147,8 @@ fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
             tens: digit_map(v[0]).ok_or(BandError::BadDigit(1))?,
             ones: digit_map(v[1]).ok_or(BandError::BadDigit(2))?,
             mult: mult_map(v[2]).ok_or(BandError::BadMultiplier)?,
-            tolerance: Ok(0.)?,
-            temp: Ok(0)?,
+            tolerance: 0.0,
+            temp: 0,
         }),
         4 => Ok(Bands {
             hundreds: 0,
@@ -121,7 +156,7 @@ fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
             ones: digit_map(v[1]).ok_or(BandError::BadDigit(2))?,
             mult: mult_map(v[2]).ok_or(BandError::BadMultiplier)?,
             tolerance: tolerance_map(v[3]).map_err(|_| BandError::BadTolerance)?,
-            temp: Ok(0)?,
+            temp: 0,
         }),
         5 => Ok(Bands {
             hundreds: digit_map(v[0]).ok_or(BandError::BadDigit(1))?,
@@ -129,7 +164,7 @@ fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
             ones: digit_map(v[2]).ok_or(BandError::BadDigit(3))?,
             mult: mult_map(v[3]).ok_or(BandError::BadMultiplier)?,
             tolerance: tolerance_map(v[4]).map_err(|_| BandError::BadTolerance)?,
-            temp: Ok(0)?,
+            temp: 0,
         }),
         6 => Ok(Bands {
             hundreds: digit_map(v[0]).ok_or(BandError::BadDigit(1))?,
@@ -143,89 +178,94 @@ fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
     }
 }
 
-
+/// Maps color characters to digit values (0-9)
 fn digit_map(c: char) -> Option<u8> {
     match c {
-        'k' => Some(0),
-        'n' => Some(1),
-        'r' => Some(2),
-        'o' => Some(3),
-        'y' => Some(4),
-        'g' => Some(5),
-        'l' => Some(6),
-        'v' => Some(7),
-        'e' => Some(8),
-        'w' => Some(9),
+        'k' => Some(0),  // Black
+        'n' => Some(1),  // Brown
+        'r' => Some(2),  // Red
+        'o' => Some(3),  // Orange
+        'y' => Some(4),  // Yellow
+        'g' => Some(5),  // Green
+        'l' => Some(6),  // Blue
+        'v' => Some(7),  // Violet
+        'e' => Some(8),  // Grey
+        'w' => Some(9),  // White
         _ => None,
     }
 }
 
+/// Maps color characters to multiplier values
 fn mult_map(c: char) -> Option<f32> {
     match c {
-        'k' => Some(1.),
-        'n' => Some(10.),
-        'r' => Some(100.),
-        'o' => Some(1000.),
-        'y' => Some(10000.),
-        'g' => Some(100000.),
-        'l' => Some(1000000.),
-        'v' => Some(10000000.),
-        'e' => Some(100000000.),
-        'w' => Some(1000000000.),
-        'd' => Some(0.1),
-        's' => Some(0.01),
+        'k' => Some(1.0),           // Black
+        'n' => Some(10.0),          // Brown
+        'r' => Some(100.0),         // Red
+        'o' => Some(1000.0),        // Orange
+        'y' => Some(10000.0),       // Yellow
+        'g' => Some(100000.0),      // Green
+        'l' => Some(1000000.0),     // Blue
+        'v' => Some(10000000.0),    // Violet
+        'e' => Some(100000000.0),   // Grey
+        'w' => Some(1000000000.0),  // White
+        'd' => Some(0.1),           // Gold
+        's' => Some(0.01),          // Silver
         _ => None,
     }
 }
 
+/// Maps color characters to tolerance values
 fn tolerance_map(c: char) -> Result<f32, BandError> {
     match c {
-        'n' => Ok(0.01),
-        'r' => Ok(0.02),
-        'o' => Ok(0.03),
-        'y' => Ok(0.04),
-        'g' => Ok(0.005),
-        'l' => Ok(0.0025),
-        'v' => Ok(0.001),
-        'e' => Ok(0.0005),
-        'd' => Ok(0.05),
-        's' => Ok(0.1),
+        'n' => Ok(0.01),  // Brown
+        'r' => Ok(0.02),  // Red
+        'o' => Ok(0.03),  // Orange
+        'y' => Ok(0.04),  // Yellow
+        'g' => Ok(0.005), // Green
+        'l' => Ok(0.0025),// Blue
+        'v' => Ok(0.001), // Violet
+        'e' => Ok(0.0005),// Grey
+        'd' => Ok(0.05),  // Gold
+        's' => Ok(0.1),   // Silver
         _ => Err(BandError::BadTolerance),
     }
 }
 
+/// Maps color characters to temperature coefficient values
 fn temp_map(c: char) -> Result<u8, BandError> {
     match c {
-        'k' => Ok(250),
-        'n' => Ok(100),
-        'r' => Ok(50),
-        'o' => Ok(15),
-        'y' => Ok(25),
-        'g' => Ok(20),
-        'l' => Ok(10),
-        'v' => Ok(5),
-        'e' => Ok(1),
+        'k' => Ok(250), // Black
+        'n' => Ok(100), // Brown
+        'r' => Ok(50),  // Red
+        'o' => Ok(15),  // Orange
+        'y' => Ok(25),  // Yellow
+        'g' => Ok(20),  // Green
+        'l' => Ok(10),  // Blue
+        'v' => Ok(5),   // Violet
+        'e' => Ok(1),   // Grey
         _ => Err(BandError::BadTemperature),
     }
 }
 
+/// Converts Bands structure to resistance value and tolerance
 fn bands_to_ohms(raw: &Bands) -> (f32, f32) {
     let value: f32 =
-        (raw.hundreds as f32 * 100. + raw.tens as f32 * 10. + raw.ones as f32) * raw.mult;
+        (raw.hundreds as f32 * 100.0 + raw.tens as f32 * 10.0 + raw.ones as f32) * raw.mult;
     let tolerance = raw.tolerance * value;
     (value, tolerance)
 }
 
-fn egr_fmt(number: f32) -> (f32, char) {
+/// Formats a number using engineering notation (K, M, G, etc.)
+fn eng_fmt(number: f32) -> (f32, char) {
     match number {
-        n if n == 0. => (n, ' '),
-        n if n < 0.000_001 => (n, 'n'),
-        n if n < 0.001 => (n, 'μ'),
-        n if n < 1. => (n, 'm'),
-        n if n < 1_000. => (n, ' '),
-        n if n < 1_000_000. => (n / 1_000., 'K'),
-        n if n < 1_000_000_000. => (n / 1_000_000., 'M'),
-        n if n < 1_000_000_000_000. => (n / 1_000_000_000., 'G'),
+        n if n == 0.0 => (n, ' '),
+        n if n < NANO_THRESHOLD => (n, 'n'),
+        n if n < MICRO_THRESHOLD => (n, 'μ'),
+        n if n < MILLI_THRESHOLD => (n, 'm'),
+        n if n < KILO_THRESHOLD => (n, ' '),
+        n if n < MEGA_THRESHOLD => (n / 1_000.0, 'K'),
+        n if n < GIGA_THRESHOLD => (n / 1_000_000.0, 'M'),
+        n if n < 1_000_000_000_000.0 => (n / 1_000_000_000.0, 'G'),
         _ => (number, '?'),
     }
 }
@@ -358,14 +398,14 @@ mod tests {
     }
 
     #[test]
-    fn test_egr_fmt() {
-        assert_eq!(egr_fmt(0.0), (0.0, ' '));
-        assert_eq!(egr_fmt(0.000_000_5), (0.000_000_5, 'n'));
-        assert_eq!(egr_fmt(0.000_5), (0.000_5, 'μ'));
-        assert_eq!(egr_fmt(0.5), (0.5, 'm'));
-        assert_eq!(egr_fmt(500.0), (500.0, ' '));
-        assert_eq!(egr_fmt(5000.0), (5.0, 'K'));
-        assert_eq!(egr_fmt(5_000_000.0), (5.0, 'M'));
-        assert_eq!(egr_fmt(5_000_000_000.0), (5.0, 'G'));
+    fn test_eng_fmt() {
+        assert_eq!(eng_fmt(0.0), (0.0, ' '));
+        assert_eq!(eng_fmt(0.000_000_5), (0.000_000_5, 'n'));
+        assert_eq!(eng_fmt(0.000_5), (0.000_5, 'μ'));
+        assert_eq!(eng_fmt(0.5), (0.5, 'm'));
+        assert_eq!(eng_fmt(500.0), (500.0, ' '));
+        assert_eq!(eng_fmt(5000.0), (5.0, 'K'));
+        assert_eq!(eng_fmt(5_000_000.0), (5.0, 'M'));
+        assert_eq!(eng_fmt(5_000_000_000.0), (5.0, 'G'));
     }
 }

@@ -8,6 +8,8 @@ A fast, minimal, and robust command-line resistor color code calculator written 
 - Displays resistance, tolerance, and temperature coefficient (if present)
 - Clear error messages for invalid input
 - SI prefix formatting for readable output (e.g., 4.7KΩ)
+- Graceful exit with 'quit' or 'exit' commands
+- Multiple resistor codes can be processed in one line
 - Unit tested for reliability
 - Tiny, optimized binary
 
@@ -32,17 +34,23 @@ You will see a prompt:
 
 ```
 blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite gol[D] [S]ilver
-
+Enter color codes separated by spaces. Type 'quit' or 'exit' to exit.
 Input color code:
 ```
 
-Type the color code letters as a single string (e.g., `rrrn` for red-red-red-brown, `rrrr` for red-red-red-red, `rrlr` for red-red-blue-red), then press Enter. Inputs can be strung together separated by whitespace (e.g. `rrrn rrrr rrlr`).
+Type the color code letters as a single string (e.g., `rrrn` for red-red-red-brown, `rrrr` for red-red-red-red, `rrlr` for red-red-blue-red), then press Enter. Inputs can be strung together separated by whitespace (e.g. `rrrn rrrr rrlr`). Type `quit` or `exit` to exit the program.
+
 #### Example
 
 ```
-Input color code:
-rrrn
-22.00KΩ ± 220.00Ω
+Input color code: rrr
+2.2KΩ
+Input color code: rrrr
+2.2KΩ ± 44Ω
+Input color code: rrrrr
+22.2KΩ ± 444Ω
+Input color code: quit
+Goodbye!
 ```
 
 - Invalid input will print a clear error message.
