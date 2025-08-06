@@ -27,6 +27,7 @@ The optimized binary will be in `target/release/robsistors.exe` (Windows) or `ta
 ./target/release/robsistors
 ```
 
+
 You will see a prompt:
 
 ```
@@ -35,13 +36,12 @@ blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite g
 Input color code:
 ```
 
-Type the color code letters (e.g., `r r r n` for red-red-red-brown) separated by spaces, then press Enter.
-
+Type the color code letters as a single string (e.g., `rrrn` for red-red-red-brown, `rrrr` for red-red-red-red, `rrlr` for red-red-blue-red), then press Enter. Inputs can be strung together separated by whitespace (e.g. `rrrn rrrr rrlr`).
 #### Example
 
 ```
 Input color code:
-r r r n
+rrrn
 22.00KΩ ± 220.00Ω
 ```
 
@@ -82,4 +82,4 @@ MIT
 
 ---
 
-This readme was AI generated, but the code was not. Critique is welcome and will help me improve :-)
+This readme was AI generated, but the code was not. Critique is welcome and will help me improve :-)    
