@@ -1,24 +1,11 @@
-/// Resistor color code calculator
-/// 
-/// This program converts resistor color codes to their corresponding resistance values.
-/// Supports 3, 4, 5, and 6-band resistors.
-
 use std::fmt;
 use std::io::{self, Write};
-
-// Constants for engineering notation thresholds
-const NANO_THRESHOLD: f32 = 0.000_001;
-const MICRO_THRESHOLD: f32 = 0.001;
-const MILLI_THRESHOLD: f32 = 1.0;
-const KILO_THRESHOLD: f32 = 1_000.0;
-const MEGA_THRESHOLD: f32 = 1_000_000.0;
-const GIGA_THRESHOLD: f32 = 1_000_000_000.0;
 
 fn main() {
     println!(
         "blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite gol[D] [S]ilver"
     );
-    println!("Enter color codes separated by spaces. Type 'quit' or 'exit' to exit.");
+    println!("Enter color codes separated by spaces. Type ':q' to exit.");
 
     loop {
         print!("Input color code: ");
@@ -31,10 +18,9 @@ fn main() {
             .expect("failed to read line");
 
         let trimmed = input.trim();
-        
+
         // Check for exit commands
-        if trimmed.eq_ignore_ascii_case("quit") || trimmed.eq_ignore_ascii_case("exit") {
-            println!("Goodbye!");
+        if trimmed.eq_ignore_ascii_case(":q") {
             break;
         }
 
@@ -55,7 +41,6 @@ fn main() {
     }
 }
 
-/// Represents a resistor with its value, tolerance, and temperature coefficient
 #[derive(Debug)]
 struct Resistor {
     value: f32,
@@ -63,7 +48,6 @@ struct Resistor {
     temp: u8,
 }
 
-/// Represents the color bands of a resistor
 #[derive(Debug)]
 struct Bands {
     hundreds: u8,
@@ -74,7 +58,6 @@ struct Bands {
     temp: u8,
 }
 
-/// Errors that can occur when parsing resistor color codes
 #[derive(Clone, Debug)]
 enum BandError {
     BadDigit(usize),
@@ -113,7 +96,7 @@ impl Resistor {
 impl fmt::Display for Resistor {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt_helper(f, eng_fmt(self.value), "")?;
-        if self.tolerance != 0.0 {
+        if self.tolerance != 0. {
             let (tol_val, tol_char) = eng_fmt(self.tolerance);
             fmt_helper(f, (tol_val, tol_char), " ± ")?;
         }
@@ -124,7 +107,6 @@ impl fmt::Display for Resistor {
     }
 }
 
-/// Helper function for formatting resistor values
 fn fmt_helper(f: &mut fmt::Formatter, val: (f32, char), prefix: &str) -> fmt::Result {
     if val.1 != ' ' {
         write!(f, "{}{}{}Ω", prefix, val.0, val.1)
@@ -133,13 +115,6 @@ fn fmt_helper(f: &mut fmt::Formatter, val: (f32, char), prefix: &str) -> fmt::Re
     }
 }
 
-/// Converts a vector of characters to Bands structure
-/// 
-/// Supports 3, 4, 5, and 6-band resistors:
-/// - 3-band: digit, digit, multiplier
-/// - 4-band: digit, digit, multiplier, tolerance
-/// - 5-band: digit, digit, digit, multiplier, tolerance
-/// - 6-band: digit, digit, digit, multiplier, tolerance, temperature
 fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
     match v.len() {
         3 => Ok(Bands {
@@ -147,7 +122,7 @@ fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
             tens: digit_map(v[0]).ok_or(BandError::BadDigit(1))?,
             ones: digit_map(v[1]).ok_or(BandError::BadDigit(2))?,
             mult: mult_map(v[2]).ok_or(BandError::BadMultiplier)?,
-            tolerance: 0.0,
+            tolerance: 0.,
             temp: 0,
         }),
         4 => Ok(Bands {
@@ -178,60 +153,56 @@ fn chars_to_bands(v: Vec<char>) -> Result<Bands, BandError> {
     }
 }
 
-/// Maps color characters to digit values (0-9)
 fn digit_map(c: char) -> Option<u8> {
     match c {
-        'k' => Some(0),  // Black
-        'n' => Some(1),  // Brown
-        'r' => Some(2),  // Red
-        'o' => Some(3),  // Orange
-        'y' => Some(4),  // Yellow
-        'g' => Some(5),  // Green
-        'l' => Some(6),  // Blue
-        'v' => Some(7),  // Violet
-        'e' => Some(8),  // Grey
-        'w' => Some(9),  // White
+        'k' => Some(0), // Black
+        'n' => Some(1), // Brown
+        'r' => Some(2), // Red
+        'o' => Some(3), // Orange
+        'y' => Some(4), // Yellow
+        'g' => Some(5), // Green
+        'l' => Some(6), // Blue
+        'v' => Some(7), // Violet
+        'e' => Some(8), // Grey
+        'w' => Some(9), // White
         _ => None,
     }
 }
 
-/// Maps color characters to multiplier values
 fn mult_map(c: char) -> Option<f32> {
     match c {
-        'k' => Some(1.0),           // Black
-        'n' => Some(10.0),          // Brown
-        'r' => Some(100.0),         // Red
-        'o' => Some(1000.0),        // Orange
-        'y' => Some(10000.0),       // Yellow
-        'g' => Some(100000.0),      // Green
-        'l' => Some(1000000.0),     // Blue
-        'v' => Some(10000000.0),    // Violet
-        'e' => Some(100000000.0),   // Grey
-        'w' => Some(1000000000.0),  // White
-        'd' => Some(0.1),           // Gold
-        's' => Some(0.01),          // Silver
+        'k' => Some(1.),             // Black
+        'n' => Some(10.),            // Brown
+        'r' => Some(100.),           // Red
+        'o' => Some(1_000.),         // Orange
+        'y' => Some(10_000.),        // Yellow
+        'g' => Some(100_000.),       // Green
+        'l' => Some(1_000_000.),     // Blue
+        'v' => Some(10_000_000.),    // Violet
+        'e' => Some(100_000_000.),   // Grey
+        'w' => Some(1_000_000_000.), // White
+        'd' => Some(0.1),            // Gold
+        's' => Some(0.01),           // Silver
         _ => None,
     }
 }
 
-/// Maps color characters to tolerance values
 fn tolerance_map(c: char) -> Result<f32, BandError> {
     match c {
-        'n' => Ok(0.01),  // Brown
-        'r' => Ok(0.02),  // Red
-        'o' => Ok(0.03),  // Orange
-        'y' => Ok(0.04),  // Yellow
-        'g' => Ok(0.005), // Green
-        'l' => Ok(0.0025),// Blue
-        'v' => Ok(0.001), // Violet
-        'e' => Ok(0.0005),// Grey
-        'd' => Ok(0.05),  // Gold
-        's' => Ok(0.1),   // Silver
+        'n' => Ok(0.01),    // Brown
+        'r' => Ok(0.02),    // Red
+        'o' => Ok(0.03),    // Orange
+        'y' => Ok(0.04),    // Yellow
+        'g' => Ok(0.005),   // Green
+        'l' => Ok(0.002_5), // Blue
+        'v' => Ok(0.001),   // Violet
+        'e' => Ok(0.000_5), // Grey
+        'd' => Ok(0.05),    // Gold
+        's' => Ok(0.1),     // Silver
         _ => Err(BandError::BadTolerance),
     }
 }
 
-/// Maps color characters to temperature coefficient values
 fn temp_map(c: char) -> Result<u8, BandError> {
     match c {
         'k' => Ok(250), // Black
@@ -247,25 +218,23 @@ fn temp_map(c: char) -> Result<u8, BandError> {
     }
 }
 
-/// Converts Bands structure to resistance value and tolerance
 fn bands_to_ohms(raw: &Bands) -> (f32, f32) {
     let value: f32 =
-        (raw.hundreds as f32 * 100.0 + raw.tens as f32 * 10.0 + raw.ones as f32) * raw.mult;
+        (raw.hundreds as f32 * 100. + raw.tens as f32 * 10. + raw.ones as f32) * raw.mult;
     let tolerance = raw.tolerance * value;
     (value, tolerance)
 }
 
-/// Formats a number using engineering notation (K, M, G, etc.)
 fn eng_fmt(number: f32) -> (f32, char) {
     match number {
-        n if n == 0.0 => (n, ' '),
-        n if n < NANO_THRESHOLD => (n, 'n'),
-        n if n < MICRO_THRESHOLD => (n, 'μ'),
-        n if n < MILLI_THRESHOLD => (n, 'm'),
-        n if n < KILO_THRESHOLD => (n, ' '),
-        n if n < MEGA_THRESHOLD => (n / 1_000.0, 'K'),
-        n if n < GIGA_THRESHOLD => (n / 1_000_000.0, 'M'),
-        n if n < 1_000_000_000_000.0 => (n / 1_000_000_000.0, 'G'),
+        n if n == 0. => (n, ' '),
+        n if n < 0.00_001 => (n, 'n'),
+        n if n < 0.001 => (n, 'μ'),
+        n if n < 1. => (n, 'm'),
+        n if n < 1_000. => (n, ' '),
+        n if n < 1_000_000. => (n / 1_000., 'K'),
+        n if n < 1_000_000_000. => (n / 1_000_000., 'M'),
+        n if n < 1_000_000_000_000. => (n / 1_000_000_000., 'G'),
         _ => (number, '?'),
     }
 }
@@ -291,7 +260,7 @@ mod tests {
     fn test_mult_map_valid() {
         assert_eq!(mult_map('k'), Some(1.));
         assert_eq!(mult_map('d'), Some(0.1));
-        assert_eq!(mult_map('w'), Some(1000000000.));
+        assert_eq!(mult_map('w'), Some(1_000_000_000.));
     }
 
     #[test]
@@ -360,26 +329,50 @@ mod tests {
 
     #[test]
     fn test_chars_to_bands_invalid_length() {
-        assert!(matches!(chars_to_bands(vec!['r']), Err(BandError::UnsupportedLength)));
-        assert!(matches!(chars_to_bands(vec!['r', 'r']), Err(BandError::UnsupportedLength)));
-        assert!(matches!(chars_to_bands(vec!['r', 'r', 'r', 'r', 'r', 'r', 'r']), Err(BandError::UnsupportedLength)));
+        assert!(matches!(
+            chars_to_bands(vec!['r']),
+            Err(BandError::UnsupportedLength)
+        ));
+        assert!(matches!(
+            chars_to_bands(vec!['r', 'r']),
+            Err(BandError::UnsupportedLength)
+        ));
+        assert!(matches!(
+            chars_to_bands(vec!['r', 'r', 'r', 'r', 'r', 'r', 'r']),
+            Err(BandError::UnsupportedLength)
+        ));
     }
 
     #[test]
     fn test_chars_to_bands_invalid_digit() {
-        assert!(matches!(chars_to_bands(vec!['x', 'r', 'r']), Err(BandError::BadDigit(1))));
-        assert!(matches!(chars_to_bands(vec!['r', 'x', 'r']), Err(BandError::BadDigit(2))));
-        assert!(matches!(chars_to_bands(vec!['r', 'r', 'x']), Err(BandError::BadMultiplier)));
+        assert!(matches!(
+            chars_to_bands(vec!['x', 'r', 'r']),
+            Err(BandError::BadDigit(1))
+        ));
+        assert!(matches!(
+            chars_to_bands(vec!['r', 'x', 'r']),
+            Err(BandError::BadDigit(2))
+        ));
+        assert!(matches!(
+            chars_to_bands(vec!['r', 'r', 'x']),
+            Err(BandError::BadMultiplier)
+        ));
     }
 
     #[test]
     fn test_chars_to_bands_invalid_tolerance() {
-        assert!(matches!(chars_to_bands(vec!['r', 'r', 'r', 'z']), Err(BandError::BadTolerance)));
+        assert!(matches!(
+            chars_to_bands(vec!['r', 'r', 'r', 'z']),
+            Err(BandError::BadTolerance)
+        ));
     }
 
     #[test]
     fn test_chars_to_bands_invalid_temp() {
-        assert!(matches!(chars_to_bands(vec!['r', 'r', 'r', 'k', 'n', 'z']), Err(BandError::BadTemperature)));
+        assert!(matches!(
+            chars_to_bands(vec!['r', 'r', 'r', 'k', 'n', 'z']),
+            Err(BandError::BadTemperature)
+        ));
     }
 
     #[test]
@@ -388,24 +381,24 @@ mod tests {
             hundreds: 1,
             tens: 2,
             ones: 3,
-            mult: 10.0,
+            mult: 10.,
             tolerance: 0.05,
             temp: 0,
         };
         let (value, tolerance) = bands_to_ohms(&bands);
-        assert_eq!(value, 1230.0);
+        assert_eq!(value, 1230.);
         assert!((tolerance - 61.5).abs() < 1e-6);
     }
 
     #[test]
     fn test_eng_fmt() {
-        assert_eq!(eng_fmt(0.0), (0.0, ' '));
+        assert_eq!(eng_fmt(0.), (0., ' '));
         assert_eq!(eng_fmt(0.000_000_5), (0.000_000_5, 'n'));
         assert_eq!(eng_fmt(0.000_5), (0.000_5, 'μ'));
         assert_eq!(eng_fmt(0.5), (0.5, 'm'));
-        assert_eq!(eng_fmt(500.0), (500.0, ' '));
-        assert_eq!(eng_fmt(5000.0), (5.0, 'K'));
-        assert_eq!(eng_fmt(5_000_000.0), (5.0, 'M'));
-        assert_eq!(eng_fmt(5_000_000_000.0), (5.0, 'G'));
+        assert_eq!(eng_fmt(500.), (500., ' '));
+        assert_eq!(eng_fmt(5000.), (5., 'K'));
+        assert_eq!(eng_fmt(5_000_000.), (5., 'M'));
+        assert_eq!(eng_fmt(5_000_000_000.), (5., 'G'));
     }
 }
