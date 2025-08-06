@@ -16,3 +16,6 @@ panic = "abort"          # Removes stack unwinding code for panics
 strip = "symbols"        # Strips debug symbols (requires Rust 1.59+)
 incremental = false      # Disable incremental compilation for smaller build artifacts
 debug = false            # Do not include debug info in release
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-Ctarget-feature=+crt-static"]
