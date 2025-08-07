@@ -8,7 +8,7 @@ A fast, minimal, and robust command-line resistor color code calculator written 
 - Displays resistance, tolerance, and temperature coefficient (if present)
 - Clear error messages for invalid input
 - SI prefix formatting for readable output (e.g., 4.7KΩ)
-- Graceful exit with 'quit' or 'exit' commands
+- Graceful exit with ':q'command
 - Multiple resistor codes can be processed in one line
 - Unit tested for reliability
 - Tiny, optimized binary
@@ -34,7 +34,7 @@ You will see a prompt:
 
 ```
 blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite gol[D] [S]ilver
-Enter color codes separated by spaces. Type 'quit' or 'exit' to exit.
+Enter color codes separated by spaces. Type ':q' to exit.
 Input color code:
 ```
 
