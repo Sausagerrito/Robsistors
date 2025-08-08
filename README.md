@@ -8,7 +8,7 @@ A fast, minimal, and robust command-line resistor color code calculator written 
 - Displays resistance, tolerance, and temperature coefficient (if present)
 - Clear error messages for invalid input
 - SI prefix formatting for readable output (e.g., 4.7KΩ)
-- Graceful exit with ':q'command
+- Graceful exit with ':q' command
 - Multiple resistor codes can be processed in one line
 - Unit tested for reliability
 - Tiny, optimized binary
@@ -49,8 +49,7 @@ Input color code: rrrr
 2.2KΩ ± 44Ω
 Input color code: rrrrr
 22.2KΩ ± 444Ω
-Input color code: quit
-Goodbye!
+Input color code: :q
 ```
 
 - Invalid input will print a clear error message.
@@ -83,6 +82,11 @@ cargo test
 ## Optimizations
 - Release builds use LTO, panic=abort, and symbol stripping for a tiny binary
 - No runtime allocations for color code lookup
+
+## To-Do
+- Enable the configuration decimal places, tolerance percentages, and temperature coefficients.
+- Create a --help argument that shows a short tutorial. 
+- Create a tui, support colors and fun ascii art.
 
 ## License
 

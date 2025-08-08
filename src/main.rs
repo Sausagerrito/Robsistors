@@ -228,6 +228,7 @@ fn bands_to_ohms(raw: &Bands) -> (f32, f32) {
 fn eng_fmt(number: f32) -> (f32, char) {
     match number {
         n if n == 0. => (n, ' '),
+        n if n < 0.00_000_001 => (n, '?'),
         n if n < 0.00_001 => (n, 'n'),
         n if n < 0.001 => (n, 'μ'),
         n if n < 1. => (n, 'm'),
