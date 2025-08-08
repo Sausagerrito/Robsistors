@@ -101,7 +101,7 @@ impl fmt::Display for Resistor {
             fmt_helper(f, (tol_val, tol_char), " ± ")?;
         }
         if self.temp != 0 {
-            write!(f, ", {}°C", self.temp)?;
+            write!(f, ", {} ppm/°C", self.temp)?;
         }
         Ok(())
     }
@@ -109,9 +109,9 @@ impl fmt::Display for Resistor {
 
 fn fmt_helper(f: &mut fmt::Formatter, val: (f32, char), prefix: &str) -> fmt::Result {
     if val.1 != ' ' {
-        write!(f, "{}{}{}Ω", prefix, val.0, val.1)
+        write!(f, "{}{} {}Ω", prefix, val.0, val.1)
     } else {
-        write!(f, "{}{}Ω", prefix, val.0)
+        write!(f, "{}{} Ω", prefix, val.0)
     }
 }
 
@@ -228,10 +228,7 @@ fn bands_to_ohms(raw: &Bands) -> (f32, f32) {
 fn eng_fmt(number: f32) -> (f32, char) {
     match number {
         n if n == 0. => (n, ' '),
-        n if n < 0.00_000_001 => (n, '?'),
-        n if n < 0.00_001 => (n, 'n'),
-        n if n < 0.001 => (n, 'μ'),
-        n if n < 1. => (n, 'm'),
+        n if n < 1. => (n * 1_000., 'm'),
         n if n < 1_000. => (n, ' '),
         n if n < 1_000_000. => (n / 1_000., 'K'),
         n if n < 1_000_000_000. => (n / 1_000_000., 'M'),
@@ -394,11 +391,9 @@ mod tests {
     #[test]
     fn test_eng_fmt() {
         assert_eq!(eng_fmt(0.), (0., ' '));
-        assert_eq!(eng_fmt(0.000_000_5), (0.000_000_5, 'n'));
-        assert_eq!(eng_fmt(0.000_5), (0.000_5, 'μ'));
         assert_eq!(eng_fmt(0.5), (0.5, 'm'));
         assert_eq!(eng_fmt(500.), (500., ' '));
-        assert_eq!(eng_fmt(5000.), (5., 'K'));
+        assert_eq!(eng_fmt(5000.), (5., 'k'));
         assert_eq!(eng_fmt(5_000_000.), (5., 'M'));
         assert_eq!(eng_fmt(5_000_000_000.), (5., 'G'));
     }
