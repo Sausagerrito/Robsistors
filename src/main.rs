@@ -2,8 +2,6 @@ use std::fmt;
 use std::io::{self, Write};
 
 fn main() {
-    birthday();
-
     println!(
         "blac[K] brow[N] [R]ed [O]range [Y]ellow [G]reen b[L]ue [V]iolet gr[E]y [W]hite gol[D] [S]ilver"
     );
@@ -403,12 +401,4 @@ mod tests {
         assert_eq!(eng_fmt(5_000_000.), (5., 'M'));
         assert_eq!(eng_fmt(5_000_000_000.), (5., 'G'));
     }
-}
-
-fn birthday() {
-    let mut age: u8 = 64;
-
-    age += 1;
-
-    println!("Happy {}th Birthday!", age);
 }
